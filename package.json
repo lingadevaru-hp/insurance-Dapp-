@@ -1,0 +1,25 @@
+{
+  "name": "insurance",
+  "version": "1.0.0",
+  "description": "Blockchain Insurance Claiming System",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test",
+    "compile": "truffle compile",
+    "migrate": "truffle migrate",
+    "dev": "cd src && python3 -m http.server 8000"
+  },
+  "keywords": ["blockchain", "insurance", "ethereum", "solidity"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "web3": "^4.16.0"
+  },
+  "devDependencies": {
+    "truffle": "^5.11.5",
+    "@openzeppelin/contracts": "^4.9.0"
+  }
+}
