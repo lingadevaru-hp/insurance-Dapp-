@@ -79,8 +79,9 @@ async function buyPolicy() {
     return;
   }
 
-  const premiumWei = web3.utils.toWei(premiumEth, 'ether');
-  const payoutWei = web3.utils.toWei(payout, 'ether');
+  // Convert to string to avoid BigInt issues
+  const premiumWei = web3.utils.toWei(premiumEth.toString(), 'ether').toString();
+  const payoutWei = web3.utils.toWei(payout.toString(), 'ether').toString();
 
   try {
     disableButton('buyButton');
@@ -98,8 +99,8 @@ async function buyPolicy() {
     const result = await insuranceContract.methods.buyPolicy(payoutWei).send({
       from: account,
       value: premiumWei,
-      gas: Math.ceil(gasEstimate * 1.2), // Add 20% buffer
-      gasPrice: gasPrice
+      gas: Math.ceil(Number(gasEstimate) * 1.2), // Add 20% buffer
+      gasPrice: gasPrice.toString()
     });
     
     console.log('Transaction result:', result);
@@ -148,8 +149,8 @@ async function claimPolicy() {
     
     const result = await insuranceContract.methods.claimPolicy(policyId).send({
       from: account,
-      gas: Math.ceil(gasEstimate * 1.2), // Add 20% buffer
-      gasPrice: gasPrice
+      gas: Math.ceil(Number(gasEstimate) * 1.2), // Add 20% buffer
+      gasPrice: gasPrice.toString()
     });
     
     console.log('Claim result:', result);
@@ -201,8 +202,8 @@ async function viewPolicy() {
     const policyInfo = `
       Policy ID: ${policyId}
       Holder: ${policy[0]}
-      Premium: ${web3.utils.fromWei(policy[1], 'ether')} ETH
-      Payout: ${web3.utils.fromWei(policy[2], 'ether')} ETH
+      Premium: ${web3.utils.fromWei(policy[1].toString(), 'ether')} ETH
+      Payout: ${web3.utils.fromWei(policy[2].toString(), 'ether')} ETH
       Active: ${policy[3]}
       Claimed: ${policy[4]}
     `;
