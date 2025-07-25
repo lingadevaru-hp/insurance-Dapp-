@@ -1,6 +1,7 @@
 let web3;
 let insuranceContract;
 let account;
+let deferredPrompt;
 
 window.addEventListener('load', async () => {
   // Modern dapp browsers...
@@ -265,3 +266,156 @@ if (window.ethereum) {
     window.location.reload();
   });
 }
+
+// PWA functionality
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('SW registered: ', registration);
+      })
+      .catch((registrationError) => {
+        console.log('SW registration failed: ', registrationError);
+      });
+  });
+}
+
+// PWA install prompt
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  
+  const installPrompt = document.getElementById('installPrompt');
+  const installBtn = document.getElementById('installBtn');
+  
+  if (installPrompt && installBtn) {
+    installPrompt.style.display = 'block';
+    
+    installBtn.addEventListener('click', () => {
+      installPrompt.style.display = 'none';
+      deferredPrompt.prompt();
+      
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+        } else {
+          console.log('User dismissed the install prompt');
+        }
+        deferredPrompt = null;
+      });
+    });
+  }
+});
+
+// PWA installed event
+window.addEventListener('appinstalled', (evt) => {
+  console.log('App was installed');
+  const installPrompt = document.getElementById('installPrompt');
+  if (installPrompt) {
+    installPrompt.style.display = 'none';
+  }
+});
+
+// Enhanced error handling with retry functionality
+function showStatusWithRetry(elementId, message, type, retryFn) {
+  const statusElement = document.getElementById(elementId);
+  statusElement.innerHTML = `
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <span>${message}</span>
+      ${retryFn ? '<button onclick="' + retryFn.name + '()" style="width: auto; padding: 5px 10px; margin-left: 10px; font-size: 12px;">Retry</button>' : ''}
+    </div>
+  `;
+  statusElement.className = `status ${type} show`;
+}
+
+// Network status detection
+function updateNetworkStatus() {
+  const isOnline = navigator.onLine;
+  const statusElements = document.querySelectorAll('.status');
+  
+  if (!isOnline) {
+    statusElements.forEach(el => {
+      if (!el.textContent.includes('offline')) {
+        showStatus(el.id, '📱 You are offline. Some features may not work.', 'warning');
+      }
+    });
+  }
+}
+
+window.addEventListener('online', updateNetworkStatus);
+window.addEventListener('offline', updateNetworkStatus);
+
+// Enhanced touch interactions for mobile
+if ('ontouchstart' in window) {
+  document.body.classList.add('touch-device');
+  
+  // Add haptic feedback for button clicks
+  document.addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON' && 'vibrate' in navigator) {
+      navigator.vibrate(50);
+    }
+  });
+}
+
+// Performance monitoring
+if ('performance' in window) {
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const perfData = performance.getEntriesByType('navigation')[0];
+      console.log('Page load time:', perfData.loadEventEnd - perfData.loadEventStart);
+    }, 0);
+  });
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey) {
+    switch(e.key) {
+      case '1':
+        e.preventDefault();
+        document.getElementById('payout').focus();
+        break;
+      case '2':
+        e.preventDefault();
+        document.getElementById('policyId').focus();
+        break;
+      case '3':
+        e.preventDefault();
+        document.getElementById('viewPolicyId').focus();
+        break;
+    }
+  }
+});
+
+// Auto-save form data to localStorage
+function saveFormData() {
+  const formData = {
+    payout: document.getElementById('payout').value,
+    premium: document.getElementById('premium').value,
+    timestamp: Date.now()
+  };
+  localStorage.setItem('insuranceFormData', JSON.stringify(formData));
+}
+
+function loadFormData() {
+  const savedData = localStorage.getItem('insuranceFormData');
+  if (savedData) {
+    const data = JSON.parse(savedData);
+    // Only restore if data is less than 1 hour old
+    if (Date.now() - data.timestamp < 3600000) {
+      document.getElementById('payout').value = data.payout || '';
+      document.getElementById('premium').value = data.premium || '';
+    }
+  }
+}
+
+// Auto-save on input
+['payout', 'premium'].forEach(id => {
+  const element = document.getElementById(id);
+  if (element) {
+    element.addEventListener('input', saveFormData);
+  }
+});
+
+// Load saved data on page load
+window.addEventListener('load', loadFormData);
